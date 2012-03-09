@@ -2,7 +2,7 @@ var http=require('http');
 var ns=require('node-static');
 var WebSocketServer=require('ws').Server;
 
-var port = 3000;
+var port = process.env.PORT || 3000;
 var sessions =[];
 var file=new(ns.Server)("./public");
 	http.createServer(function(request, response){
