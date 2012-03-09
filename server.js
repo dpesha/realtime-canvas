@@ -1,10 +1,35 @@
 var http=require('http');
-var content='<html><body><p>hellow world</p><script type="text/javascript">alert("hi");</script></body></html>';
-var port = process.env.PORT || 3000;
+var ns=require('node-static');
+var WebSocketServer=require('ws').Server;
 
+var port = 3000;
+var sessions =[];
+var file=new(ns.Server)("./public");
 	http.createServer(function(request, response){
-		response.end(content);
+		request.addListener('end',function(){
+		file.serve(request,response);
+		});
 	}).listen(port, function() {
-  console.log("Listening on " + port)});
+		console.log("Listening on " + port);
+	});
+	var wss = new WebSocketServer({port:8080});
+	wss.on('connection', function(ws) {
+		console.log("new client connected");
+		sessions.push(ws);
+		ws.on('message', function(message) {
+			console.log('received: %s', message);
+			for (var i = 0; i < sessions.length; i++) {			
+				sessions[i].send(message);
+			}
+		});
+		ws.on('close',function(){
+			console.log("client disconnected");
+			for (var i = 0; i < sessions.length; i++) {
+				if(sessions[i]==ws){
+					sessions.splice(i,1);
+				}
+			}
+		});
+		
+	});
 
-// TODO: deploy node into heroku, cloudfoundry, joyent
