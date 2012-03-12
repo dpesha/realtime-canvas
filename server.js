@@ -5,14 +5,14 @@ var WebSocketServer=require('ws').Server;
 var port = process.env.PORT || 3000;
 var sessions =[];
 var file=new(ns.Server)("./public");
-	http.createServer(function(request, response){
+	var app=module.exports=http.createServer(function(request, response){
 		request.addListener('end',function(){
 		file.serve(request,response);
 		});
 	}).listen(port, function() {
 		console.log("Listening on " + port);
 	});
-	var wss = new WebSocketServer({port:8080});
+	var wss = new WebSocketServer({server:app,path:'/socket'});
 	wss.on('connection', function(ws) {
 		console.log("new client connected");
 		sessions.push(ws);

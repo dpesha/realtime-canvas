@@ -1,3 +1,5 @@
+var ws_host = window.location.href.replace(/(http|https)(:\/\/.*?)\//, 'ws$2');
+alert(ws_host);
 var Message= {
     createMessage:function(type,message){
         var msg={
@@ -17,7 +19,7 @@ $(document).ready(function() {
                 var context=canvas.getContext('2d');
                 var tool=new tool_pencil(context);
                 
-                var wsc = new WebSocket("ws://localhost:8080/"); 
+                var wsc = new WebSocket(ws_host+'/socket'); 
                 
                 wsc.onopen= function() {
                     $('#messages').prepend('<li>Connected to the server.</li>');
