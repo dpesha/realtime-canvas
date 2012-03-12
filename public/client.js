@@ -1,8 +1,19 @@
 var ws_host = window.location.href.replace(/(http|https)(:\/\/.*?)\//, 'ws$2');
-alert(ws_host);
+
+var User= new function(){
+    
+    this.userid="unknown";
+    this.getUserid=function(){
+        return this.userid;
+    }
+    this.setUserid=function(userid){
+        this.userid=userid;
+    }    
+}
+
 var Message= {
     createMessage:function(type,message){
-        var msg={
+        var msg={          
           type: type,
           message:message
         };
@@ -13,65 +24,125 @@ var Message= {
     }
 };
 
-$(document).ready(function() {
+var Canvas = new function(){
+       
+    this.canvas=null;
+    this.context=null;
+    this.tool=null;
     
-                var canvas=document.getElementById("myDrawing");
-                var context=canvas.getContext('2d');
-                var tool=new tool_pencil(context);
-                
-                var wsc = new WebSocket(ws_host+'/socket'); 
-                
-                wsc.onopen= function() {
-                    $('#messages').prepend('<li>Connected to the server.</li>');
-                };
+    this.init=function(){
+        this.canvas=document.getElementById('myDrawing');
+        this.context=this.canvas.getContext('2d');
+        this.context.strokeStyle;
+        this.tool=new tool_pencil(this.context);
+    }
+    
+    this.draw=function(message){
+        
+        var func=this.tool[message.type];
+        if(func){
+            this.context.strokeStyle=message.color;
+            func(message._x,message._y);
+        }
+    }   
+    
+    this.clear=function(){
+        this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);       
+    }
+};
 
-                wsc.onmessage= function(message) {
-                    var parsed=Message.parseMessage(message.data);
-                    if(parsed.type=='chat'){
-                        $('#messages').prepend('<li>' + parsed.message + '</li>');
-                    }
-                    else if(parsed.type=='canvas'){
-                        var func=tool[parsed.message.type];
-                        if(func){
-                            func(parsed.message._x,parsed.message._y);
-                        }
-                    }
-                };
+var Server={
+    
+    connect:function(){     
+    var wsc = new WebSocket(ws_host+'/socket'); 
+                
+        wsc.onopen= function() {
+            wsc.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has joined'));
+        };
 
-                wsc.onclose= function() {
-                    $('#messages').prepend('<li>Disconnected from the server.</li>');
-                };
+        wsc.onmessage= function(message) {
+            var parsed=Message.parseMessage(message.data);
+            if(parsed.type=='chat'){
+                $('#messages').prepend('<li>' + parsed.message + '</li>');
+            }
+            else if(parsed.type=='canvas'){
+                Canvas.draw(parsed.message);
+            }
+        };
+        wsc.onclose= function() {                    
+        };
+       return wsc;         
+    },
+    disconnect:function(wsc){
+        wsc.close();
+    }
+   
+};
 
-                $('#messageText').keypress(function(event) {
-                   if ( event.which == 13 ) {
-                    var message = $('#messageText').val();                    
-                    wsc.send(Message.createMessage('chat',message));
-                    $('#messageText').val('');  
-                   }                    
-                });        
-                
-                
-                // bind mouse events
-                $('#myDrawing').bind('mousedown',ev_canvas);                
-                $('#myDrawing').bind('mousemove',ev_canvas);
-                $('#myDrawing').bind('mouseup',ev_canvas);
-                
-                
-                function ev_canvas(ev){
-                    var message={
-                        _x:ev.offsetX,
-                        _y:ev.offsetY,
-                        type:ev.type
-                    };
-                    wsc.send(Message.createMessage('canvas',message));
-                }  
+$(document).ready(function() {                
+    Canvas.init();    
+    var connected=false;
+    var server;
+    
+    $('#messageText').keypress(function(event) {
+       if ( event.which == 13 ) {
+        var message = User.getUserid() + ': ' + $('#messageText').val();                    
+        server.send(Message.createMessage('chat',message));
+        $('#messageText').val('');  
+       }                    
+    });  
+    
+    // bind mouse events for canvas
+    $('#myDrawing').bind('mousedown',ev_canvas);                
+    $('#myDrawing').bind('mousemove',ev_canvas);
+    $('#myDrawing').bind('mouseup',ev_canvas);
+    
+    // Mouse movement listener for canvas
+    function ev_canvas(ev){
+        var message={
+            _x:ev.offsetX,
+            _y:ev.offsetY,
+            type:ev.type,
+            color:'#'+$('#pencilColor').val()
+        };
+        server.send(Message.createMessage('canvas',message));
+    }
+    
+    $('#clear').bind('click',function(){
+       Canvas.clear();        
+    });
+        
+    
+    $('#connect').bind('click',function(){
+        
+        if(!connected){
+            
+            if($('#userid').val()!=''){
+                User.setUserid($('#userid').val());
+            }
+            server=Server.connect();                        
+            $('#content'). css('display','block');
+            $('#userid').attr("disabled", true);
+            $('#connect').val('disconnect');
+            connected=true;                        
+        } else {
+            server.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has left'));
+            $("#userid").attr("disabled",false);
+            $('#userid').val('');
+            $('#connect').val('connect');
+            User.setUserid('unknown');
+            Server.disconnect(server);
+            server=null;
+            connected=false;
+        }
+    });
                 
                 
 });
 
- // This painting tool works like a drawing pencil which tracks the mouse 
-  // movements.
-  function tool_pencil (context) {   
+// This painting tool works like a drawing pencil which tracks the mouse 
+// movements.
+function tool_pencil (context) {
     var tool = this;
     this.started = false;
 
@@ -100,5 +171,5 @@ $(document).ready(function() {
         tool.started = false;
       }
     };
-  }
+}
 

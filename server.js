@@ -14,7 +14,7 @@ var file=new(ns.Server)("./public");
 	});
 	var wss = new WebSocketServer({server:app,path:'/socket'});
 	wss.on('connection', function(ws) {
-		console.log("new client connected");
+		console.log("new client connected!");
 		sessions.push(ws);
 		ws.on('message', function(message) {
 			console.log('received: %s', message);
