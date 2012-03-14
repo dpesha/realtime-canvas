@@ -3,12 +3,14 @@ var ws_host = window.location.href.replace(/(http|https)(:\/\/.*?)\//, 'ws$2');
 var User= new function(){
     
     this.userid="unknown";
+        
     this.getUserid=function(){
         return this.userid;
     }
     this.setUserid=function(userid){
         this.userid=userid;
-    }    
+    } 
+    
 }
 
 var Message= {
@@ -33,12 +35,10 @@ var Canvas = new function(){
     this.init=function(){
         this.canvas=document.getElementById('myDrawing');
         this.context=this.canvas.getContext('2d');
-        this.context.strokeStyle;
-        this.tool=new tool_pencil(this.context);
+        this.tool=new tool_pencil(this.context);       
     }
     
-    this.draw=function(message){
-        
+    this.draw=function(message){        
         var func=this.tool[message.type];
         if(func){
             this.context.strokeStyle=message.color;
@@ -51,11 +51,36 @@ var Canvas = new function(){
     }
 };
 
+var Canvas2 = new function(){
+       
+    this.canvas2=null;
+    this.context2=null;
+    this.tool2=null;
+    
+    this.init=function(){
+        this.canvas2=document.getElementById('myDrawing1');
+        this.context2=this.canvas2.getContext('2d');
+        this.tool2=new tool_pencil(this.context2);       
+    }
+    
+    this.draw=function(message){        
+        var func=this.tool2[message.type];
+        if(func){
+            this.context2.strokeStyle=message.color;
+            func(message._x,message._y);
+        }
+    }   
+    
+    this.clear=function(){
+        this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);       
+    }
+};
+
 var Server={
     
     connect:function(){     
-    var wsc = new WebSocket(ws_host+'/socket'); 
-                
+    var wsc = new WebSocket(ws_host+'/socket');
+    
         wsc.onopen= function() {
             wsc.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has joined'));
         };
@@ -66,7 +91,12 @@ var Server={
                 $('#messages').prepend('<li>' + parsed.message + '</li>');
             }
             else if(parsed.type=='canvas'){
+                if(parsed.message.user==User.getUserid()){
                 Canvas.draw(parsed.message);
+                }
+                else {
+                    Canvas2.draw(parsed.message);
+                }
             }
         };
         wsc.onclose= function() {                    
@@ -80,7 +110,8 @@ var Server={
 };
 
 $(document).ready(function() {                
-    Canvas.init();    
+    Canvas.init();
+    Canvas2.init();
     var connected=false;
     var server;
     
@@ -103,7 +134,9 @@ $(document).ready(function() {
             _x:ev.offsetX,
             _y:ev.offsetY,
             type:ev.type,
-            color:'#'+$('#pencilColor').val()
+            color:'#'+$('#pencilColor').val(),
+            user:User.getUserid()
+            
         };
         server.send(Message.createMessage('canvas',message));
     }
@@ -124,7 +157,8 @@ $(document).ready(function() {
             $('#content'). css('display','block');
             $('#userid').attr("disabled", true);
             $('#connect').val('disconnect');
-            connected=true;                        
+            connected=true;
+            
         } else {
             server.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has left'));
             $("#userid").attr("disabled",false);
@@ -150,7 +184,7 @@ function tool_pencil (context) {
     // This starts the pencil drawing.
     this.mousedown = function (x,y) {
         context.beginPath();
-        context.moveTo(x, y);
+        context.moveTo(x, y);       
         tool.started = true;
     };
 
@@ -166,7 +200,7 @@ function tool_pencil (context) {
 
     // This is called when you release the mouse button.
     this.mouseup = function (x,y) {
-      if (tool.started) {
+      if (tool.started) {        
         tool.mousemove(x,y);
         tool.started = false;
       }
