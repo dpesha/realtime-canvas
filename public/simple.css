@@ -1,38 +1,52 @@
-.wrap {
-width:1020px;
+#page-container {
+    width:1000px;
+    margin:auto; 
 }
 
-#left {
-float:left;
-width:400px;
-height:390px;
-padding:10px;
-background:#f9f9f9;
-overflow:auto;
-
-}
-#right {
-position:relative;    
-float:right;
-width:600px;
-border-width:1px;
-/*background:#f5f5f5;*/
+#header{    
 }
 
-#myDrawing1{
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 0;
-    
+#content {
+    display:none;
+    position:relative;
+}
+
+#content-menu{
+    float:right;
+}
+
+#content-left{
+    clear:both;
+    float:left;
+    width:400px;
+    height:400px;
+    background:#f9f9f9;
+    overflow:auto;
+}
+
+#content-right{
+    position:relative;  
+    float:right;
+    width:600px;    
+}
+
+#footer{
+    clear:both;
 }
 
 #myDrawing{
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 1;
-    
+    position:absolute;
+    top:0;
+    left:0;
+    z-index: 1;    
+    background:#f5f5f5;
+}
+
+#myDrawing1{
+    position:absolute;
+    top:0;
+    left:0;
+    z-index: 0;    
 }
 
 

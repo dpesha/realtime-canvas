@@ -82,13 +82,19 @@ var Server={
     var wsc = new WebSocket(ws_host+'/socket');
     
         wsc.onopen= function() {
-            wsc.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has joined'));
+            wsc.send(Message.createMessage('userjoin',User.getUserid()));            
         };
 
         wsc.onmessage= function(message) {
             var parsed=Message.parseMessage(message.data);
             if(parsed.type=='chat'){
                 $('#messages').prepend('<li>' + parsed.message + '</li>');
+            }
+            else if(parsed.type=='userjoin'){
+                $('#messages').prepend('<li>' + parsed.message + ' has joined.</li>');                
+            }
+            else if(parsed.type=='userleave'){
+                $('#messages').prepend('<li>' + parsed.message + ' has left.</li>');                
             }
             else if(parsed.type=='canvas'){
                 if(parsed.message.user==User.getUserid()){
@@ -98,12 +104,16 @@ var Server={
                     Canvas2.draw(parsed.message);
                 }
             }
+            else if(parsed.type=='update'){
+                $('#currentUsers').text(parsed.message);				
+            }
         };
-        wsc.onclose= function() {                    
+        wsc.onclose= function() {            
         };
        return wsc;         
     },
     disconnect:function(wsc){
+        wsc.send(Message.createMessage('userleave',User.getUserid()));
         wsc.close();
     }
    
@@ -159,13 +169,12 @@ $(document).ready(function() {
             $('#connect').val('disconnect');
             connected=true;
             
-        } else {
-            server.send(Message.createMessage('chat',User.getUserid() + ' ' + 'has left'));
+        } else {            
             $("#userid").attr("disabled",false);
             $('#userid').val('');
             $('#connect').val('connect');
-            User.setUserid('unknown');
             Server.disconnect(server);
+            User.setUserid('unknown');
             server=null;
             connected=false;
         }

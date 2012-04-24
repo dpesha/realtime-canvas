@@ -7,33 +7,38 @@
   <link rel="stylesheet" type="text/css" href="simple.css">
   <script type="text/javascript" src="client.js"></script>
  </head>
+ 
  <body>
-  <h1>Realtime Canvas</h1>
-  <div class="wrap">
-  <div id="top">
-   <div>
-    <input id="userid" type="text"/>
-    <input id="connect" type="button" value="connect"/>
-   </div>
-   <div style="float:right;">
+  
+  <div id="page-container">
+  <div id="header">
+   <h1>Realtime Canvas</h1>
+   <input id="userid" type="text"/>
+   <input id="connect" type="button" value="connect"/>   
+  </div>
+   <div id="content">
+   <div id="content-menu">    
     <input id="pencilColor" class="color" value="000000" style="width:50px;"/>
-    <input id="clear" type="button" value="clear"/>
-    <br/>
+    <input id="clear" type="button" value="clear"/>    
    </div>
-  </div>  
-  <div id="content" style='display:none;'>
-   <br/><br/>
-   <div id="left">
+   
+   <div id="content-left">
     <input id="messageText" type="text"/>
     <ul id="messages"></ul>
    </div>
-   <div id="right">
+   
+   <div id="content-right">
     <canvas id="myDrawing" width="600" height="400">
     </canvas>
     <canvas id="myDrawing1" width="600" height="400">
     </canvas>
    </div>
-  </div>
-  </div>
+   
+   <div id="footer">Online Now:
+    <label id="currentUsers"></label>
+   </div>
+  </div> 
+ </div>   
+ 
  </body>
 </html>
