@@ -1,9 +1,9 @@
 var ws_host = window.location.href.replace(/(http|https)(:\/\/.*?)\//, 'ws$2');
+var clients={};
 
 var User= new function(){
     
-    this.userid="unknown";
-        
+    this.userid="unknown";        
     this.getUserid=function(){
         return this.userid;
     }
@@ -36,44 +36,19 @@ var Canvas = new function(){
         this.canvas=document.getElementById('myDrawing');
         this.context=this.canvas.getContext('2d');
         this.tool=new tool_pencil(this.context);       
-    }
+    }  
     
-    this.draw=function(message){        
-        var func=this.tool[message.type];
-        if(func){
-            this.context.strokeStyle=message.color;
-            func(message._x,message._y);
-        }
-    }   
-    
-    this.clear=function(){
-        this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);       
-    }
-};
 
-var Canvas2 = new function(){
-       
-    this.canvas2=null;
-    this.context2=null;
-    this.tool2=null;
-    
-    this.init=function(){
-        this.canvas2=document.getElementById('myDrawing1');
-        this.context2=this.canvas2.getContext('2d');
-        this.tool2=new tool_pencil(this.context2);       
-    }
-    
-    this.draw=function(message){        
-        var func=this.tool2[message.type];
-        if(func){
-            this.context2.strokeStyle=message.color;
-            func(message._x,message._y);
+    this.draw=function(data){
+    if(clients[data.user]) {
+        var func=this.tool[data.type];
+        if(func){            
+            this.context.strokeStyle=data.color;
+            func(clients[data.user]._x,clients[data.user]._y,data._x,data._y);
         }
-    }   
-    
-    this.clear=function(){
-        this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);       
-    }
+      }
+      clients[data.user] = data;
+    }    
 };
 
 var Server={
@@ -97,12 +72,7 @@ var Server={
                 $('#messages').prepend('<li>' + parsed.message + ' has left.</li>');                
             }
             else if(parsed.type=='canvas'){
-                if(parsed.message.user==User.getUserid()){
-                Canvas.draw(parsed.message);
-                }
-                else {
-                    Canvas2.draw(parsed.message);
-                }
+                Canvas.draw(parsed.message);                
             }
             else if(parsed.type=='update'){
                 $('#currentUsers').text(parsed.message);				
@@ -119,9 +89,11 @@ var Server={
    
 };
 
+
+
+
 $(document).ready(function() {                
     Canvas.init();
-    Canvas2.init();
     var connected=false;
     var server;
     
@@ -134,10 +106,13 @@ $(document).ready(function() {
     });  
     
     // bind mouse events for canvas
-    $('#myDrawing').bind('mousedown',ev_canvas);                
+    // mousedown
+    $('#myDrawing').bind('mousedown',ev_canvas);
+    //mousemove
     $('#myDrawing').bind('mousemove',ev_canvas);
+    // mouseup
     $('#myDrawing').bind('mouseup',ev_canvas);
-    
+
     // Mouse movement listener for canvas
     function ev_canvas(ev){
         var message={
@@ -149,10 +124,16 @@ $(document).ready(function() {
             
         };
         server.send(Message.createMessage('canvas',message));
+        
     }
     
     $('#clear').bind('click',function(){
-       Canvas.clear();        
+        var message={
+            type:'clear',
+            user:User.getUserid()
+            
+        };
+        server.send(Message.createMessage('canvas',message));   
     });
         
     
@@ -188,31 +169,40 @@ $(document).ready(function() {
 function tool_pencil (context) {
     var tool = this;
     this.started = false;
+    
 
     // This is called when you start holding down the mouse button.
     // This starts the pencil drawing.
-    this.mousedown = function (x,y) {
-        context.beginPath();
-        context.moveTo(x, y);       
+    
+    this.mousedown = function () {
         tool.started = true;
     };
+    
 
     // This function is called every time you move the mouse. Obviously, it only 
     // draws if the tool.started state is set to true (when you are holding down 
     // the mouse button).
-    this.mousemove = function (x,y) {
+    this.mousemove = function (fromx,fromy,tox,toy) {
       if (tool.started) {
-        context.lineTo(x, y);
-        context.stroke();
-      }
+            context.beginPath();
+            context.moveTo(fromx,fromy)
+            context.lineTo(tox, toy);
+            context.stroke();
+          
+     }
     };
 
     // This is called when you release the mouse button.
-    this.mouseup = function (x,y) {
-      if (tool.started) {        
-        tool.mousemove(x,y);
-        tool.started = false;
+    
+    this.mouseup = function () {
+      if (tool.started) { 
+            tool.started = false;
       }
+    };
+    
+
+    this.clear = function(){
+        context.clearRect(0,0,context.canvas.width,context.canvas.height);
     };
 }
 

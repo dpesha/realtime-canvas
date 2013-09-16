@@ -15,7 +15,7 @@ var file=new(ns.Server)("./public");
 	});
 	var wss = new WebSocketServer({server:app,path:'/socket'});
 	wss.on('connection', function(ws) {
-		console.log("new client connected!");
+		console.log("new user connected!");
 		sessions.push(ws);
 		ws.on('message', function(message) {
 			console.log('received: %s', message);
@@ -38,7 +38,7 @@ var file=new(ns.Server)("./public");
 			}
 		});
 		ws.on('close',function(){
-			console.log("client disconnected");
+			console.log("user disconnected");
 			for (var i = 0; i < sessions.length; i++) {
 				if(sessions[i]==ws){
 					sessions.splice(i,1);
